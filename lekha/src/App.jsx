@@ -1,39 +1,86 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
 
 function App() {
-  const [note, setNote] = useState('');
-  const [lastSaved, setLastSaved] = useState(null);
-  
+  const [notes, setNotes] = useState([]);
+  const [activeNoteId, setActiveNoteId] = useState(null);
+  const [currentTitle, setCurrentTitle] = useState('');
+  const [currentContent, setCurrentContent] = useState('');
+
   useEffect(() => {
-    const savedNote = localStorage.getItem('myNote');
-    const savedTime = localStorage.getItem('lastSaved');
-    if (savedNote) {
-      setNote(savedNote);
-    }
-    if (savedTime) {
-      const dateObj = isNaN(savedTime) ? new Date(savedTime) : new Date(parseInt(savedTime));
-      setLastSaved(dateObj.toLocaleDateString());
+    const savedNotes = localStorage.getItem('allNotes');
+    if (savedNotes) {
+      const parsed = JSON.parse(savedNotes);
+      setNotes(parsed);
+      if (parsed.length > 0) {
+        setActiveNoteId(parsed[0].id);
+        setCurrentTitle(parsed[0].title);
+        setCurrentContent(parsed[0].content);
+      }
     }
    }, []);
 
-  const saveNote = () => {
-    const now = new Date().toLocaleDateString();
-    localStorage.setItem('myNote', note);
-    localStorage.setItem('lastSaved', now);
-    setLastSaved(now);
-    alert('Note saved successfully!');
+   useEffect(() => {
+    if (notes.length > 0) {
+      localStorage.setItem('allNotes', JSON.stringify(notes));
+    }
+  }, [notes]);
+
+  const createNewNote = () => {
+    const newNote = {
+      id: Date.now(),
+      title: 'Untitled Note',
+      content: '',
+      createdAt: new Date().toLocaleDateString()
+    };
+    setNotes([newNote, ...notes]);
+    setActiveNoteId(newNote.id);
+    setCurrentTitle(newNote.title);
+    setCurrentContent(newNote.content);
+  };
+
+  const selectNote = (note) => {
+    if(activeNoteId){
+      saveCurrentNote();
+    }
+    setActiveNoteId(note.id);
+    setCurrentTitle(note.title);
+    setCurrentContent(note.content);
+  };
+
+  const saveCurrentNote = () => {
+    if(!activeNoteId) return;
+
+    setNotes(notes.map(note =>
+      note.id === activeNoteId ? { ...note, title: currentTitle, content: currentContent, updatedAt: new Date().toLocaleDateString()() } : note ));
   }
 
-  const clearNote = () => {
+  const deleteNote = (id, e) => {
+    e.stopPropagation();
+
     if(confirm('Are you sure you want to clear this note?')) {
-      setNote('');
-      localStorage.removeItem('myNote');
-      localStorage.removeItem('lastSaved');
-      setLastSaved(null);
+      const newNotes= notes.filter(note => note.id !== id);
+      setNotes(newNotes);
+
+      if(activeNoteId === id) {
+        if(newNotes.length > 0) {
+          setActiveNoteId(newNotes[0].id);
+          setCurrentTitle(newNotes[0].title);
+          setCurrentContent(newNotes[0].content);
+        }else{
+          setActiveNoteId(null);
+          setCurrentTitle('');
+          setCurrentContent('');
+        }
+      }
+      
+      if (newNotes.length === 0) {
+        localStorage.removeItem('allNotes');
+      }
     }
   };
 
-  const charCount = note.length;
+  const charCount = currentContent.length;
 
   return(
   <div className='min-h-screen bg-gray-100 p-8'>
