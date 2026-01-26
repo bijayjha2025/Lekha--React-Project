@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, Trash2, Search, X } from 'lucide-react';
+import { Plus, Trash2, Search, X, Tag } from 'lucide-react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
@@ -8,10 +8,12 @@ function App() {
   const [activeNoteId, setActiveNoteId] = useState(null);
   const [currentTitle, setCurrentTitle] = useState('');
   const [currentContent, setCurrentContent] = useState('');
+  const [currentTags, setCurrentTags] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('updated');
   const [isSaving, setIsSaving] = useState(false);
-
+  const [selectedTag, setSelectedTag] = useState(null);
+  const [tagInput, setTagInput] = useState('');
   const activeNote = notes.find(n => n.id === activeNoteId);
 
   const savedTimeoutRef = useRef(null);
@@ -25,6 +27,7 @@ function App() {
         setActiveNoteId(parsed[0].id);
         setCurrentTitle(parsed[0].title);
         setCurrentContent(parsed[0].content);
+        setCurrentTags(parsed[0].tags || []);
       }
     }
    }, []);
@@ -42,6 +45,7 @@ function App() {
       id: Date.now(),
       title: 'Untitled Note',
       content: '',
+      tags: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -49,12 +53,14 @@ function App() {
     setActiveNoteId(newNote.id);
     setCurrentTitle(newNote.title);
     setCurrentContent(newNote.content);
+    setCurrentTags([]);
   };
 
   const selectNote = (note) => {
     setActiveNoteId(note.id);
     setCurrentTitle(note.title);
     setCurrentContent(note.content);
+    setCurrentTags(note.tags || []);
   };
 
   const saveCurrentNote = useCallback(() => {
@@ -62,10 +68,10 @@ function App() {
 
     setNotes(prev =>
       prev.map(note =>
-      note.id === activeNoteId ? { ...note, title: currentTitle, content: currentContent, updatedAt: new Date().toISOString() } : note )
+      note.id === activeNoteId ? { ...note, title: currentTitle, content: currentContent, tags:currentTags, updatedAt: new Date().toISOString() } : note )
     );
     setIsSaving(false);
-  }, [activeNoteId, currentTitle, currentContent]);
+  }, [activeNoteId, currentTitle, currentContent, currentTags]);
 
     useEffect(() => {
     if(!activeNoteId) return;
@@ -85,7 +91,7 @@ function App() {
         clearTimeout(savedTimeoutRef.current);
       }
     };
-  }, [currentTitle, currentContent, saveCurrentNote]);
+  }, [currentTitle, currentContent, currentTags, saveCurrentNote]);
 
   const deleteNote = (id, e) => {
     e.stopPropagation();
@@ -99,14 +105,37 @@ function App() {
           setActiveNoteId(newNotes[0].id);
           setCurrentTitle(newNotes[0].title);
           setCurrentContent(newNotes[0].content);
+          setCurrentTags(newNotes[0].tags || []);
         }else{
           setActiveNoteId(null);
           setCurrentTitle('');
           setCurrentContent('');
+          setCurrentTags([]);
         }
       }
     }
   };
+
+  const addTag = () => {
+    const tag = tagInput.trim().toLowerCase();
+    if(tag && !currentTags.includes(tag)) {
+      setCurrentTags([...currentTags, tag]);
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tagToRemove) => {
+    setCurrentTags(currentTags.filter(tag => tag !== tagToRemove));
+  }
+
+  const handleTagKeyPress = (e) => {
+    if(e.key === 'Enter') {
+      e.preventDefault();
+      addTag();
+    }
+  };
+
+  const allTags = [...new Set(notes.flatMap(note => note.tags || []))].sort();
 
   const stripHtml = (html) => {
     const tmp = document.createElement('div');
@@ -117,9 +146,10 @@ function App() {
   const filteredNotes = notes.filter(note => {
     const searchLower = searchQuery.toLowerCase();
     const plainContent = stripHtml(note.content);
-    return (
-      note.title.toLowerCase().includes(searchLower) || plainContent.toLowerCase().includes(searchLower)
-    );
+    const matchesSearch = note.title.toLowerCase().includes(searchLower) || plainContent.toLowerCase().includes(searchLower);
+    const matchesTag = selectedTag === 'all' || (notes.tags || []).includes(selectedTag);
+
+    return matchesSearch && matchesTag;
   });
 
   const sortedNotes = [...filteredNotes].sort((a, b) => {
@@ -160,6 +190,22 @@ function App() {
     'link', 'image'
   ];
 
+  const tagColors = [
+    'bg-red-100 text-red-700',
+    'bg-blue-100 text-blue-700',
+    'bg-green-100 text-green-700',
+    'bg-yellow-100 text-yellow-700',
+    'bg-purple-100 text-purple-700',
+    'bg-pink-100 text-pink-700',
+    'bg-indigo-100 text-indigo-700',
+    'bg-orange-100 text-orange-700',
+  ];
+
+  const getTagColor = (tag) => {
+    const index = tag.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return tagColors[index % tagColors.length];
+  };
+
   return(
   <div className='flex h-screen bg-gray-100'>
    <div className='w-72 bg-white border-r border-gray-200 flex flex-col'>
@@ -175,6 +221,13 @@ function App() {
         <X size={18} />
        </button>
       )}
+     </div>
+
+     <div className='mb-3'>
+      <select value={selectedTag} onChange={(e) => setSelectedTag(e.target.value)} className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#bff542] text-sm' >
+      <option value='all'>All Tags</option>
+       {allTags.map(tag => ( <option key={tag} value={tag}>{tag}</option> ))}
+      </select>
      </div>
 
      <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className='w-full mb-3 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#bff542] text-sm'>
@@ -201,6 +254,13 @@ function App() {
        </div>
       
       <p className='text-xs text-gray-500 line-clamp-2 mb-1'>{stripHtml(note.content) || 'No Content'}</p>
+      {note.tags && note.tags.length > 0 && (
+       <div className='flex flex-wrap gap-1 mb-1'>
+        {note.tags.map(tag => (
+        <span key={tag} className={`text-xs px-2 py-0.5 rounded ${getTagColor(tag)}`}>#{tag}</span>
+        ))}
+       </div>
+       )}
       <p className='text-xs text-gray-400'>{new Date(note.updatedAt).toLocaleDateString()}</p>
      </div>
     ))
@@ -218,6 +278,24 @@ function App() {
      <>
       <div className='p-4 border-b border-gray-200'>
        <input type='text' value={currentTitle} onChange={(e) => setCurrentTitle(e.target.value)} placeholder='Note Title...' className='w-full p-4 border-none text-gray-800 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#bff542]'/>
+
+       <div className='mt-3 mb-2'>
+        <div className='flex items-center gap-2 mb-2'>
+         <Tag size={16} className='text-gray-500' />
+         <input type='text' value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyPress={handleTagKeyPress} placeholder='Add tags (Press Enter)' className='flex-1 text-sm border-b border-gray-300 focus:border-[#71f022] focus:outline-none py-1' />
+         <button onClick={addTag} className='px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded transition-colors'>Add</button>
+        </div>
+
+        {currentTags.length > 0 && (
+         <div className='flex flex-wrap gap-2'>
+          {currentTags.map(tag => (
+          <span key={tag} className={`text-sm px-3 py-1 rounded flex items-center gap-2 ${getTagColor(tag)}`}>
+           {tag}<button onClick={() => removeTag(tag)} className='hover:text-red-600' ><X size={14} /></button>
+          </span>
+          ))}
+         </div>
+         )}
+        </div>
 
        <div className="flex items-center justify-between mt-2">
        <p className='text-xs text-gray-500'>
