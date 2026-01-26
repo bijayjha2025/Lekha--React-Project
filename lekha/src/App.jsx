@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, Trash2, Search, X } from 'lucide-react';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
 function App() {
   const [notes, setNotes] = useState([]);
@@ -106,10 +108,17 @@ function App() {
     }
   };
 
+  const stripHtml = (html) => {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  };
+
   const filteredNotes = notes.filter(note => {
     const searchLower = searchQuery.toLowerCase();
+    const plainContent = stripHtml(note.content);
     return (
-      note.title.toLowerCase().includes(searchLower) || note.content.toLowerCase().includes(searchLower)
+      note.title.toLowerCase().includes(searchLower) || plainContent.toLowerCase().includes(searchLower)
     );
   });
 
@@ -126,8 +135,30 @@ function App() {
     }
   });
 
+  const plainContent = stripHtml(currentContent);
   const charCount = currentContent.length;
   const wordCount = currentContent.trim().split(/\s+/).filter(w => w.length > 0).length;
+
+  const modules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'align': [] }],
+      ['link', 'image'],
+      ['clean']
+    ],
+  };
+
+  const formats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'color', 'background',
+    'list', 'bullet',
+    'align',
+    'link', 'image'
+  ];
 
   return(
   <div className='flex h-screen bg-gray-100'>
@@ -169,7 +200,7 @@ function App() {
         <button onClick={(e) => deleteNote(note.id, e)} className='text-red-500 hover:text-red-700'><Trash2 size={16} /></button>
        </div>
       
-      <p className='text-xs text-gray-500 line-clamp-2 mb-1'>{note.content || 'No Content'}</p>
+      <p className='text-xs text-gray-500 line-clamp-2 mb-1'>{stripHtml(note.content) || 'No Content'}</p>
       <p className='text-xs text-gray-400'>{new Date(note.updatedAt).toLocaleDateString()}</p>
      </div>
     ))
@@ -199,8 +230,8 @@ function App() {
       </div>
       </div>
 
-      <div className="flex-1 p-6 overflow-y-auto">
-       <textarea value={currentContent} onChange={(e) => setCurrentContent(e.target.value)} placeholder="Start typing your note..." className="w-full h-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#bff542] resize-none" />
+      <div className="flex-1 overflow-hidden">
+       < ReactQuill theme='snow' value={currentContent} onChange={setCurrentContent} modules={modules} formats={formats} placeholder="Start typing your note..." className="h-full" style={{ height: 'calc(100% - 42px)' }} />
       </div>
       </>
 
