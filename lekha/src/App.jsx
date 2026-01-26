@@ -8,6 +8,7 @@ function App() {
   const [currentContent, setCurrentContent] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('updated');
+  const [isSaving, setIsSaving] = useState(false);
 
   const activeNote = notes.find(n => n.id === activeNoteId);
 
@@ -61,10 +62,13 @@ function App() {
       prev.map(note =>
       note.id === activeNoteId ? { ...note, title: currentTitle, content: currentContent, updatedAt: new Date().toISOString() } : note )
     );
+    setIsSaving(false);
   }, [activeNoteId, currentTitle, currentContent]);
 
     useEffect(() => {
     if(!activeNoteId) return;
+
+    setIsSaving(true);
 
     if(savedTimeoutRef.current) {
       clearTimeout(savedTimeoutRef.current);
@@ -123,6 +127,7 @@ function App() {
   });
 
   const charCount = currentContent.length;
+  const wordCount = currentContent.trim().split(/\s+/).filter(w => w.length > 0).length;
 
   return(
   <div className='flex h-screen bg-gray-100'>
@@ -156,42 +161,46 @@ function App() {
       <p className='p-4 text-gray-600'>No notes yet. Create one to get started!</p>) : (
             
       sortedNotes.map(note => (
-      <div key={note.id} onClick={() => selectNote(note)} className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${note.id === activeNoteId ? 'bg-gray-200' : ''}`}>
-       <div className='flex justify-between items-center mb-1'>
-        <h3>{note.title || 'Untitled'}</h3>
+      <div key={note.id} onClick={() => selectNote(note)} className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-[#c8fa6b] transition-colors ${note.id === activeNoteId ? 'bg-[#f0ffd6] border-l-4 border-l-[#71f022]' : ''}`}>
+       
+       <div className='flex justify-between items-start mb-1'>
+        <h3 className='font-medium text-gray-800 truncate flex-1'>{note.title || 'Untitled'}</h3>
 
         <button onClick={(e) => deleteNote(note.id, e)} className='text-red-500 hover:text-red-700'><Trash2 size={16} /></button>
        </div>
-      <p className='text-xs text-gray-500'>{new Date(note.createdAt).toLocaleDateString()}</p>
+      
+      <p className='text-xs text-gray-500 line-clamp-2 mb-1'>{note.content || 'No Content'}</p>
+      <p className='text-xs text-gray-400'>{new Date(note.updatedAt).toLocaleDateString()}</p>
      </div>
     ))
     )}
    </div>
-  </div>
 
   <div className="p-3 border-t border-gray-200 bg-gray-50">
     <p className="text-xs text-gray-500 text-center"> {notes.length} total note{notes.length !== 1 ? 's' : ''} {searchQuery && ` • ${sortedNotes.length} found`}
    </p>
+  </div>
   </div>
 
   <div className='flex-1 flex flex-col'>
     {activeNoteId ? (
      <>
       <div className='p-4 border-b border-gray-200'>
-       <input type='text' value={currentTitle} onChange={(e) => setCurrentTitle(e.target.value)} onBlur={saveCurrentNote} placeholder='Note Title...' className='w-full p-4 border-none text-gray-800 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#bff542]'/>
-       <p>Auto saving... Last saved: {activeNote ? new Date(activeNote.updatedAt).toLocaleDateString() : 'Never'}
+       <input type='text' value={currentTitle} onChange={(e) => setCurrentTitle(e.target.value)} placeholder='Note Title...' className='w-full p-4 border-none text-gray-800 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#bff542]'/>
+
+       <div className="flex items-center justify-between mt-2">
+       <p className='text-xs text-gray-500'>
+        {isSaving ? (
+          <span className='text-amber-600'>Saving...</span>):
+          (
+          <span className='text-amber-800'>Last saved: {activeNote ? new Date(activeNote.updatedAt).toLocaleTimeString() : 'Never'}</span> )}
        </p>
+       <p className='text-xs text-gray-500'>{wordCount} word{wordCount !== 1 ? 's' : ''} • {charCount} character{charCount !== 1 ? 's' : ''}</p>
+      </div>
       </div>
 
       <div className="flex-1 p-6 overflow-y-auto">
-       <textarea value={currentContent} onChange={(e) => setCurrentContent(e.target.value)} onBlur={saveCurrentNote}placeholder="Start typing your note..." className="w-full h-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#bff542] resize-none" />
-      </div>
-      
-      <div className="bg-white border-t border-gray-200 p-4">
-       <div className="flex items-center justify-between max-w-4xl mx-auto">
-        <p className="text-sm text-gray-600">{charCount} character{charCount !== 1 ? 's' : ''}</p>
-        <button onClick={saveCurrentNote} className="px-6 py-2 bg-[#71f022] text-black rounded-lg hover:bg-[#0dd417] transition-colors cursor-pointer">Save</button>
-       </div>
+       <textarea value={currentContent} onChange={(e) => setCurrentContent(e.target.value)} placeholder="Start typing your note..." className="w-full h-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#bff542] resize-none" />
       </div>
       </>
 
@@ -199,7 +208,7 @@ function App() {
        <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
          <p className="text-gray-500 text-lg mb-4">No note selected</p>
-         <button onClick={createNewNote} className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto" ><Plus size={20} />Create Your First Note</button>
+         <button onClick={createNewNote} className="flex items-center gap-2 px-6 py-3 bg-[#71f022] text-white rounded-lg hover:bg-[#0dd417] transition-colors mx-auto" ><Plus size={20} />Create Your First Note</button>
         </div>
         </div>
        )}
