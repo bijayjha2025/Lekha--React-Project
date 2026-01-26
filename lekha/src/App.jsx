@@ -1,11 +1,17 @@
-import { useState, useEffect } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Plus, Trash2, Search, X } from 'lucide-react';
 
 function App() {
   const [notes, setNotes] = useState([]);
   const [activeNoteId, setActiveNoteId] = useState(null);
   const [currentTitle, setCurrentTitle] = useState('');
   const [currentContent, setCurrentContent] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('updated');
+
+  const activeNote = notes.find(n => n.id === activeNoteId);
+
+  const savedTimeoutRef = useRef(null);
 
   useEffect(() => {
     const savedNotes = localStorage.getItem('allNotes');
@@ -20,40 +26,60 @@ function App() {
     }
    }, []);
 
-   useEffect(() => {
-    if (notes.length > 0) {
-      localStorage.setItem('allNotes', JSON.stringify(notes));
-    }
-  }, [notes]);
+  useEffect(() => {
+  if (notes.length === 0) {
+    localStorage.removeItem('allNotes');
+  } else {
+    localStorage.setItem('allNotes', JSON.stringify(notes));
+  }
+}, [notes]);
 
   const createNewNote = () => {
     const newNote = {
       id: Date.now(),
       title: 'Untitled Note',
       content: '',
-      createdAt: new Date().toLocaleDateString()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
-    setNotes([newNote, ...notes]);
+    setNotes(prev => [newNote, ...prev]);
     setActiveNoteId(newNote.id);
     setCurrentTitle(newNote.title);
     setCurrentContent(newNote.content);
   };
 
   const selectNote = (note) => {
-    if(activeNoteId){
-      saveCurrentNote();
-    }
     setActiveNoteId(note.id);
     setCurrentTitle(note.title);
     setCurrentContent(note.content);
   };
 
-  const saveCurrentNote = () => {
+  const saveCurrentNote = useCallback(() => {
     if(!activeNoteId) return;
 
-    setNotes(notes.map(note =>
-      note.id === activeNoteId ? { ...note, title: currentTitle, content: currentContent, updatedAt: new Date().toLocaleDateString() } : note ));
-  }
+    setNotes(prev =>
+      prev.map(note =>
+      note.id === activeNoteId ? { ...note, title: currentTitle, content: currentContent, updatedAt: new Date().toISOString() } : note )
+    );
+  }, [activeNoteId, currentTitle, currentContent]);
+
+    useEffect(() => {
+    if(!activeNoteId) return;
+
+    if(savedTimeoutRef.current) {
+      clearTimeout(savedTimeoutRef.current);
+    }
+
+    savedTimeoutRef.current = setTimeout(() => {
+      saveCurrentNote();
+    }, 1000);
+
+    return () => {
+      if(savedTimeoutRef.current) {
+        clearTimeout(savedTimeoutRef.current);
+      }
+    };
+  }, [currentTitle, currentContent, saveCurrentNote]);
 
   const deleteNote = (id, e) => {
     e.stopPropagation();
@@ -73,20 +99,54 @@ function App() {
           setCurrentContent('');
         }
       }
-      
-      if (newNotes.length === 0) {
-        localStorage.removeItem('allNotes');
-      }
     }
   };
+
+  const filteredNotes = notes.filter(note => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      note.title.toLowerCase().includes(searchLower) || note.content.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const sortedNotes = [...filteredNotes].sort((a, b) => {
+    switch (sortBy) {
+      case 'updated':
+        return new Date(b.updatedAt) - new Date(a.updatedAt);
+      case 'created':
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      case 'title':
+        return a.title.localeCompare(b.title);
+      default:
+        return 0;
+    }
+  });
 
   const charCount = currentContent.length;
 
   return(
   <div className='flex h-screen bg-gray-100'>
-   <div className='w-64 bg-white border-r border-gray-200 flex flex-col'>
+   <div className='w-72 bg-white border-r border-gray-200 flex flex-col'>
     <div className='p-4 border-b border-gray-200'>
      <h1 className='text-xl font-bold text-gray-800 mb-3'>My Notes</h1>
+
+     <div className='relative mb-3'>
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+       <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search notes..." className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#bff542]"/>
+
+      {searchQuery && (
+       <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+        <X size={18} />
+       </button>
+      )}
+     </div>
+
+     <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className='w-full mb-3 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#bff542] text-sm'>
+      <option value='' disabled>Sort By</option>
+      <option value='updated'>Last Updated</option>
+      <option value='created'>Creation Date</option>
+      <option value='title'>Title(A-Z)</option>
+     </select>
 
      <button onClick={createNewNote} className='w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#71f022] text-black rounded-lg hover:bg-[#0dd417] transition-colors cursor-pointer'><Plus size={18} /> New Note</button>
     </div>
@@ -95,7 +155,7 @@ function App() {
      {notes.length === 0 ? (
       <p className='p-4 text-gray-600'>No notes yet. Create one to get started!</p>) : (
             
-      notes.map(note => (
+      sortedNotes.map(note => (
       <div key={note.id} onClick={() => selectNote(note)} className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${note.id === activeNoteId ? 'bg-gray-200' : ''}`}>
        <div className='flex justify-between items-center mb-1'>
         <h3>{note.title || 'Untitled'}</h3>
@@ -109,11 +169,18 @@ function App() {
    </div>
   </div>
 
+  <div className="p-3 border-t border-gray-200 bg-gray-50">
+    <p className="text-xs text-gray-500 text-center"> {notes.length} total note{notes.length !== 1 ? 's' : ''} {searchQuery && ` • ${sortedNotes.length} found`}
+   </p>
+  </div>
+
   <div className='flex-1 flex flex-col'>
     {activeNoteId ? (
      <>
       <div className='p-4 border-b border-gray-200'>
-       <input type='text' value={currentTitle} onChange={(e) => setCurrentTitle(e.target.value)} onBlur={saveCurrentNote} placeholder='Note Title...' className='w-full p-4 border-none text-gray-800 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#bff542]' />
+       <input type='text' value={currentTitle} onChange={(e) => setCurrentTitle(e.target.value)} onBlur={saveCurrentNote} placeholder='Note Title...' className='w-full p-4 border-none text-gray-800 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#bff542]'/>
+       <p>Auto saving... Last saved: {activeNote ? new Date(activeNote.updatedAt).toLocaleDateString() : 'Never'}
+       </p>
       </div>
 
       <div className="flex-1 p-6 overflow-y-auto">
