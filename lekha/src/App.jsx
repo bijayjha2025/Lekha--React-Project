@@ -12,7 +12,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('updated');
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedTag, setSelectedTag] = useState(null);
+  const [selectedTag, setSelectedTag] = useState('all');
   const [tagInput, setTagInput] = useState('');
   const activeNote = notes.find(n => n.id === activeNoteId);
 
@@ -126,7 +126,7 @@ function App() {
 
   const removeTag = (tagToRemove) => {
     setCurrentTags(currentTags.filter(tag => tag !== tagToRemove));
-  }
+  };
 
   const handleTagKeyPress = (e) => {
     if(e.key === 'Enter') {
@@ -147,7 +147,7 @@ function App() {
     const searchLower = searchQuery.toLowerCase();
     const plainContent = stripHtml(note.content);
     const matchesSearch = note.title.toLowerCase().includes(searchLower) || plainContent.toLowerCase().includes(searchLower);
-    const matchesTag = selectedTag === 'all' || (notes.tags || []).includes(selectedTag);
+    const matchesTag = !selectedTag || selectedTag === 'all' || (note.tags || []).includes(selectedTag);
 
     return matchesSearch && matchesTag;
   });
@@ -185,7 +185,7 @@ function App() {
     'header',
     'bold', 'italic', 'underline', 'strike',
     'color', 'background',
-    'list', 'bullet',
+    'list',
     'align',
     'link', 'image'
   ];
@@ -257,7 +257,7 @@ function App() {
       {note.tags && note.tags.length > 0 && (
        <div className='flex flex-wrap gap-1 mb-1'>
         {note.tags.map(tag => (
-        <span key={tag} className={`text-xs px-2 py-0.5 rounded ${getTagColor(tag)}`}>#{tag}</span>
+        <span key={tag} className={`text-xs px-2 py-0.5 rounded ${getTagColor(tag)}`}>{tag}</span>
         ))}
        </div>
        )}
@@ -317,7 +317,7 @@ function App() {
        <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
          <p className="text-gray-500 text-lg mb-4">No note selected</p>
-         <button onClick={createNewNote} className="flex items-center gap-2 px-6 py-3 bg-[#71f022] text-white rounded-lg hover:bg-[#0dd417] transition-colors mx-auto" ><Plus size={20} />Create Your First Note</button>
+         <button onClick={createNewNote} className="flex items-center gap-2 px-6 py-3 bg-[#71f022] text-black rounded-lg hover:bg-[#0dd417] transition-colors mx-auto" ><Plus size={20} />Create Your First Note</button>
         </div>
         </div>
        )}
