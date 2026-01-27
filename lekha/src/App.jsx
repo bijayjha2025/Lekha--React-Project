@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, Trash2, Search, X, Tag } from 'lucide-react';
+import { Plus, Trash2, Search, X, Tag, Menu, ChevronLeft } from 'lucide-react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
@@ -18,16 +18,15 @@ function App() {
 
   const savedTimeoutRef = useRef(null);
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   useEffect(() => {
     const savedNotes = localStorage.getItem('allNotes');
     if (savedNotes) {
       const parsed = JSON.parse(savedNotes);
       setNotes(parsed);
-      if (parsed.length > 0) {
-        setActiveNoteId(parsed[0].id);
-        setCurrentTitle(parsed[0].title);
-        setCurrentContent(parsed[0].content);
-        setCurrentTags(parsed[0].tags || []);
+      if (parsed.length > 0 && window.innerWidth > 768) {
+          selectNote(parsed[0]);
       }
     }
    }, []);
@@ -61,6 +60,9 @@ function App() {
     setCurrentTitle(note.title);
     setCurrentContent(note.content);
     setCurrentTags(note.tags || []);
+    if (window.innerWidth <= 768) {
+      setIsSidebarOpen(false);
+    }
   };
 
   const saveCurrentNote = useCallback(() => {
@@ -138,9 +140,8 @@ function App() {
   const allTags = [...new Set(notes.flatMap(note => note.tags || []))].sort();
 
   const stripHtml = (html) => {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || '';
   };
 
   const filteredNotes = notes.filter(note => {
@@ -165,9 +166,9 @@ function App() {
     }
   });
 
-  const plainContent = stripHtml(currentContent);
-  const charCount = currentContent.length;
-  const wordCount = currentContent.trim().split(/\s+/).filter(w => w.length > 0).length;
+  const cleanText = stripHtml(currentContent);
+  const charCount = cleanText.length;
+  const wordCount = cleanText.trim().split(/\s+/).filter(w => w.length > 0).length;
 
   const modules = {
     toolbar: [
@@ -207,123 +208,111 @@ function App() {
   };
 
   return(
-  <div className='flex h-screen bg-gray-100'>
-   <div className='w-72 bg-white border-r border-gray-200 flex flex-col'>
+  <div className='flex h-screen bg-gray-100 overflow-hidden'>
+   <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
     <div className='p-4 border-b border-gray-200'>
-     <h1 className='text-xl font-bold text-gray-800 mb-3'>My Notes</h1>
+     <div className='flex justify-between items-center mb-4'>
+      <h1 className='text-xl font-bold text-gray-800 mb-3'>My Notes</h1>
+      <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-1"><X size={20} /></button>
+     </div>
 
      <div className='relative mb-3'>
       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-       <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search notes..." className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#bff542]"/>
-
-      {searchQuery && (
-       <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-        <X size={18} />
-       </button>
-      )}
+       <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search notes..." className="w-full pl-9 pr-8 py-2 border border-gray-200 bg-gray-50 rounded-lg focus:ring-2 focus:ring-[#bff542] outline-none text-sm"/>
      </div>
 
-     <div className='mb-3'>
-      <select value={selectedTag} onChange={(e) => setSelectedTag(e.target.value)} className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#bff542] text-sm' >
-      <option value='all'>All Tags</option>
-       {allTags.map(tag => ( <option key={tag} value={tag}>{tag}</option> ))}
-      </select>
-     </div>
+     <div className='mb-2'>
+      <select value={selectedTag} onChange={(e) => setSelectedTag(e.target.value)} className='w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#bff542] text-xs'>
+       <option value='all'>All Tags</option>
+        {allTags.map(tag => (
+         <option key={tag} value={tag}>{tag}</option>
+        ))}
+       </select>
+      </div>
 
-     <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className='w-full mb-3 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#bff542] text-sm'>
-      <option value='' disabled>Sort By</option>
-      <option value='updated'>Last Updated</option>
-      <option value='created'>Creation Date</option>
-      <option value='title'>Title(A-Z)</option>
-     </select>
+      <div className='mb-3'>
+       <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className='w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#bff542] text-xs' >
+        <option value='updated'>Last Updated</option>
+        <option value='created'>Creation Date</option>
+        <option value='title'>Title (A-Z)</option>
+       </select>
+      </div>
 
      <button onClick={createNewNote} className='w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#71f022] text-black rounded-lg hover:bg-[#0dd417] transition-colors cursor-pointer'><Plus size={18} /> New Note</button>
     </div>
 
     <div className='flex-1 overflow-y-auto'>
-     {notes.length === 0 ? (
-      <p className='p-4 text-gray-600'>No notes yet. Create one to get started!</p>) : (
-            
-      sortedNotes.map(note => (
-      <div key={note.id} onClick={() => selectNote(note)} className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-[#c8fa6b] transition-colors ${note.id === activeNoteId ? 'bg-[#f0ffd6] border-l-4 border-l-[#71f022]' : ''}`}>
+     {sortedNotes.map(note => (
+      <div key={note.id} onClick={() => selectNote(note)} className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-[#c8fa6b] transition-colors ${note.id === activeNoteId ? 'bg-[#f0ffd6] border-l-4 border-l-[#71f022]' : 'hover:bg-gray-50'}`}>
        
-       <div className='flex justify-between items-start mb-1'>
-        <h3 className='font-medium text-gray-800 truncate flex-1'>{note.title || 'Untitled'}</h3>
-
-        <button onClick={(e) => deleteNote(note.id, e)} className='text-red-500 hover:text-red-700'><Trash2 size={16} /></button>
-       </div>
-      
-      <p className='text-xs text-gray-500 line-clamp-2 mb-1'>{stripHtml(note.content) || 'No Content'}</p>
-      {note.tags && note.tags.length > 0 && (
-       <div className='flex flex-wrap gap-1 mb-1'>
-        {note.tags.map(tag => (
-        <span key={tag} className={`text-xs px-2 py-0.5 rounded ${getTagColor(tag)}`}>{tag}</span>
-        ))}
-       </div>
-       )}
-      <p className='text-xs text-gray-400'>{new Date(note.updatedAt).toLocaleDateString()}</p>
+      <div className='flex justify-between items-start'>
+       <h3 className='font-medium text-gray-800 truncate flex-1'>{note.title || 'Untitled'}</h3>
+       <button onClick={(e) => deleteNote(note.id, e)} className='text-red-500 hover:text-red-700'><Trash2 size={16} /></button>
+      </div>
+      <p className='text-xs text-gray-500 line-clamp-1 mt-1'>{stripHtml(note.content) || 'Empty note...'}</p>
      </div>
-    ))
-    )}
+     ))}
+    </div>
    </div>
 
-  <div className="p-3 border-t border-gray-200 bg-gray-50">
-    <p className="text-xs text-gray-500 text-center"> {notes.length} total note{notes.length !== 1 ? 's' : ''} {searchQuery && ` • ${sortedNotes.length} found`}
-   </p>
-  </div>
-  </div>
+   <div className='flex-1 flex flex-col min-w-0 bg-white'>
+    <div className="md:hidden flex items-center p-4 border-b bg-white">
+     <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-gray-600"><Menu size={20} /></button>
+     <div className="flex-1 text-center font-bold text-gray-800">Editor</div>
+     <div className="w-8"></div>
+    </div>
 
-  <div className='flex-1 flex flex-col'>
     {activeNoteId ? (
      <>
-      <div className='p-4 border-b border-gray-200'>
-       <input type='text' value={currentTitle} onChange={(e) => setCurrentTitle(e.target.value)} placeholder='Note Title...' className='w-full p-4 border-none text-gray-800 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#bff542]'/>
+     <div className='px-4 py-2 border-b border-gray-100'>
+      <div className='flex items-center gap-2 md:hidden mb-2'>
+       <button onClick={() => setIsSidebarOpen(true)} className='text-sm flex items-center text-gray-500'><ChevronLeft size={16}/>Back to list</button>
+      </div>
 
-       <div className='mt-3 mb-2'>
-        <div className='flex items-center gap-2 mb-2'>
-         <Tag size={16} className='text-gray-500' />
-         <input type='text' value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyPress={handleTagKeyPress} placeholder='Add tags (Press Enter)' className='flex-1 text-sm border-b border-gray-300 focus:border-[#71f022] focus:outline-none py-1' />
-         <button onClick={addTag} className='px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded transition-colors'>Add</button>
-        </div>
+      <input type='text' value={currentTitle} onChange={(e) => setCurrentTitle(e.target.value)} placeholder='Note Title...' className='w-full py-2 text-xl text-gray-800 md:text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#bff542]'/>
 
-        {currentTags.length > 0 && (
-         <div className='flex flex-wrap gap-2'>
-          {currentTags.map(tag => (
-          <span key={tag} className={`text-sm px-3 py-1 rounded flex items-center gap-2 ${getTagColor(tag)}`}>
-           {tag}<button onClick={() => removeTag(tag)} className='hover:text-red-600' ><X size={14} /></button>
-          </span>
-          ))}
-         </div>
-         )}
-        </div>
-
-       <div className="flex items-center justify-between mt-2">
-       <p className='text-xs text-gray-500'>
-        {isSaving ? (
-          <span className='text-amber-600'>Saving...</span>):
-          (
-          <span className='text-amber-800'>Last saved: {activeNote ? new Date(activeNote.updatedAt).toLocaleTimeString() : 'Never'}</span> )}
-       </p>
-       <p className='text-xs text-gray-500'>{wordCount} word{wordCount !== 1 ? 's' : ''} • {charCount} character{charCount !== 1 ? 's' : ''}</p>
+      <div className='flex flex-wrap items-center gap-3 mt-2 pb-2'>
+       <div className='flex items-center gap-2'>
+        <Tag size={14} className='text-gray-400' />
+        <input type='text' value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyPress={handleTagKeyPress} placeholder='Add tags (Press Enter)' className='flex-1 text-sm border-b border-gray-300 focus:border-[#71f022] focus:outline-none py-1' />
+        <button onClick={addTag} className='text-xs border-none focus:ring-0 p-0 w-20'>Add tag...</button>
+       </div>
+        
+       <div className='flex gap-1'>
+        {currentTags.map(tag => (
+        <span key={tag} className={`text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 ${getTagColor(tag)}`}>
+         {tag} <X size={10} className='cursor-pointer' onClick={()=> removeTag(tag)} /> </span>
+        ))}
+       </div>
       </div>
       </div>
 
-      <div className="flex-1 overflow-hidden">
-       < ReactQuill theme='snow' value={currentContent} onChange={setCurrentContent} modules={modules} formats={formats} placeholder="Start typing your note..." className="h-full" style={{ height: 'calc(100% - 42px)' }} />
+      <div className="flex-1 overflow-hidden relative">
+       < ReactQuill theme='snow' value={currentContent} onChange={setCurrentContent} modules={modules} formats={formats} placeholder="Start typing your note..." className="h-full quill-responsive" />
+      </div>
+
+      <div className="p-2 border-t flex justify-between items-center text-[10px] text-gray-400 bg-gray-50">
+       <div>{isSaving ? 'Saving...' : `Saved at ${new Date(activeNote.updatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`}</div>
+       <div>{wordCount} words | {charCount} chars</div>
       </div>
       </>
 
       ) : (
-       <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-         <p className="text-gray-500 text-lg mb-4">No note selected</p>
-         <button onClick={createNewNote} className="flex items-center gap-2 px-6 py-3 bg-[#71f022] text-black rounded-lg hover:bg-[#0dd417] transition-colors mx-auto" ><Plus size={20} />Create Your First Note</button>
-        </div>
-        </div>
+      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+       <div className="bg-gray-100 p-6 rounded-full mb-4">
+        <Plus className="text-gray-400" size={40} />
+       </div>
+
+       <h2 className="text-lg font-semibold text-gray-700">No Note Selected</h2>
+        <p className="text-gray-500 max-w-xs mb-6">Select a note from the sidebar or create a new one to start writing.</p>
+        <button onClick={createNewNote} className="md:hidden px-6 py-2 bg-[#71f022] rounded-lg font-bold" >New Note</button>
+       </div>
        )}
      </div>
-    </div>
+  
+   {isSidebarOpen && (
+    <div className="fixed inset-0 bg-black/20 z-20 md:hidden" onClick={() => setIsSidebarOpen(false)} /> )}</div>
   );
-}
+};
 
 export default App;
