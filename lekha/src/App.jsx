@@ -10,7 +10,7 @@ import DeleteConfirmationModal from './Components/DeleteConfirmationModal';
 
 
 function App() {
-  const { notes, activeNoteId, activeNote, currentTitle, currentContent, currentTags, isSaving, allTags, setCurrentTitle, setCurrentContent, createNewNote, selectNote, deleteNote, addTag, removeTag,  } = useNotes();
+  const { notes, activeNoteId, activeNote, currentTitle, currentContent, currentTags, isSaving, allTags, setCurrentTitle, setCurrentContent, createNewNote, selectNote, deleteNote, addTag, removeTag, togglePin  } = useNotes();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('updated');
@@ -56,7 +56,7 @@ function App() {
 
   return(
   <div className='flex h-screen bg-gray-100 overflow-hidden'>
-    <Sidebar isOpen={isSidebarOpen} notes={sortedNotes} activeNoteId={activeNoteId} searchQuery={searchQuery} setSearchQuery={setSearchQuery}selectedTag={selectedTag} setSelectedTag={setSelectedTag} sortBy={sortBy} setSortBy={setSortBy} allTags={allTags} onCreateNote={createNewNote} onSelectNote={handleSelectNote} onDeleteNote={requestDeleteNote} />
+    <Sidebar isOpen={isSidebarOpen} notes={sortedNotes} activeNoteId={activeNoteId} searchQuery={searchQuery} setSearchQuery={setSearchQuery}selectedTag={selectedTag} setSelectedTag={setSelectedTag} sortBy={sortBy} setSortBy={setSortBy} allTags={allTags} onCreateNote={createNewNote} onSelectNote={handleSelectNote} onDeleteNote={requestDeleteNote} onTogglePin={togglePin} />
    
     <div className='flex-1 flex flex-col min-w-0 bg-white'>
     <MobileHeader onToggleSidebar={() => setIsSidebarOpen(true)} />

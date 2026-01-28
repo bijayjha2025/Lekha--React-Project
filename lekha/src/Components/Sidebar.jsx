@@ -2,7 +2,7 @@ import { Plus, Search } from 'lucide-react';
 import NoteListItem from './NoteListItem';
 import Logo from '../assets/Lekha.png';
 
-const Sidebar = ({ isOpen, notes, activeNoteId, searchQuery, setSearchQuery, selectedTag, setSelectedTag, sortBy, setSortBy, allTags, onCreateNote, onSelectNote, onDeleteNote, }) => {
+const Sidebar = ({ isOpen, notes, activeNoteId, searchQuery, setSearchQuery, selectedTag, setSelectedTag, sortBy, setSortBy, allTags, onCreateNote, onSelectNote, onDeleteNote, onTogglePin }) => {
   
  return (
   <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 transform ${ isOpen ? 'translate-x-0' : '-translate-x-full' } md:relative md:translate-x-0`} >
@@ -46,7 +46,7 @@ const Sidebar = ({ isOpen, notes, activeNoteId, searchQuery, setSearchQuery, sel
 
    <div className="flex-1 overflow-y-auto">
     {notes.map((note) => (
-     <NoteListItem key={note.id} note={note} isActive={note.id === activeNoteId} onSelect={onSelectNote} onDelete={onDeleteNote} />
+     <NoteListItem key={note.id} note={note} isActive={note.id === activeNoteId} onSelect={onSelectNote} onDelete={onDeleteNote} onTogglePin={onTogglePin} />
     ))}
   </div>
  </div>

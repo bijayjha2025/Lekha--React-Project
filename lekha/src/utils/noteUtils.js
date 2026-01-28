@@ -38,6 +38,10 @@ export const filterNotes = (notes, searchQuery, selectedTag) => {
 
 export const sortNotes = (notes, sortBy) => {
   return [...notes].sort((a, b) => {
+    if (a.isPinned !== b.isPinned) {
+      return b.isPinned ? 1 : -1;
+    }
+
     switch (sortBy) {
       case 'updated':
         return new Date(b.updatedAt) - new Date(a.updatedAt);

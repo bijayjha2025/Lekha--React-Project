@@ -1,16 +1,32 @@
-import { Trash2 } from 'lucide-react';
+import { Trash2, Pin } from 'lucide-react';
 import { stripHtml } from '../utils/noteUtils';
 
-const NoteListItem = ({ note, isActive, onSelect, onDelete }) => {
+const NoteListItem = ({ note, isActive, onSelect, onDelete, onTogglePin }) => {
+    const handlePinClick = (e) => {
+        e.stopPropagation();
+        onTogglePin(note.id);
+    }
+
   return (
     <div onClick={() => onSelect(note)} className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-[#c8fa6b] transition-colors ${
       isActive ? 'bg-[#f0ffd6] border-l-4 border-l-[#71f022]' : 'hover:bg-gray-50' }`} >
       <div className="flex justify-between items-start">
-       <h3 className="font-medium text-gray-800 truncate flex-1">{note.title || 'Untitled'}</h3>
-       <button onClick={(e) => onDelete(note.id, e)} className="text-red-500 hover:text-red-700">
+       <div className='flex items-center gap-2 flex-1'>
+        <h3 className="font-medium text-gray-800 truncate">{note.title || 'Untitled'}</h3>
+        
+        {note.isPinned && (
+          <Pin size={14} className="text-[#71f022] fill-[#71f022] flex-shrink-0" /> )}
+        </div>
+        <div className="flex items-center gap-1">
+         <button onClick={handlePinClick} className={`p-1 rounded hover:bg-gray-200 transition-colors ${ note.isPinned ? 'text-[#71f022]' : 'text-gray-400' }`} title={note.isPinned ? 'Unpin note' : 'Pin note'}>
+          <Pin size={14} className={note.isPinned ? 'fill-current' : ''} />
+         </button>
+
+        <button onClick={(e) => onDelete(note.id, e)} className="text-red-500 hover:text-red-700">
         <Trash2 size={16} />
        </button>
       </div>
+     </div>
      <p className="text-xs text-gray-500 line-clamp-1 mt-1">{stripHtml(note.content) || 'Empty note...'}</p>
     </div>
   );

@@ -69,12 +69,13 @@ export const useNotes = () => {
     };
   }, [currentTitle, currentContent, currentTags, saveCurrentNote]);
 
-  const createNewNote = () => {
+  const createNewNote = (template= null) => {
     const newNote = {
       id: Date.now(),
-      title: 'Untitled Note',
-      content: '',
-      tags: [],
+      title: template? template.title : 'Untitled Note',
+      content: template? template.content : '',
+      tags: template? template.tags : [],
+      isPinned: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -131,6 +132,14 @@ export const useNotes = () => {
 
   const allTags = [...new Set(notes.flatMap(note => note.tags || []))].sort();
 
+  const togglePin = (noteId) => {
+    setNotes(prev =>
+      prev.map(note =>
+        note.id === noteId ? { ...note, isPinned: !note.isPinned, updatedAt: new Date().toISOString() } : note
+      )
+    );
+  }
+
   return {
     notes,
     activeNoteId,
@@ -147,5 +156,6 @@ export const useNotes = () => {
     deleteNote,
     addTag,
     removeTag,
+    togglePin,
   };
 };
