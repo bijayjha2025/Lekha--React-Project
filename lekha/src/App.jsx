@@ -18,6 +18,11 @@ function App() {
 
   const savedTimeoutRef = useRef(null);
 
+  const [confirmDelete, setConfirmDelete] = useState({
+    visible: false,
+    noteId: null,
+  });
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
@@ -95,28 +100,43 @@ function App() {
     };
   }, [currentTitle, currentContent, currentTags, saveCurrentNote]);
 
-  const deleteNote = (id, e) => {
+  const requestDeleteNote = (id, e) => {
     e.stopPropagation();
+    setConfirmDelete({ visible: true, noteId: id });
+  };
 
-    if(confirm('Are you sure you want to clear this note?')) {
-      const newNotes= notes.filter(note => note.id !== id);
-      setNotes(newNotes);
+  const confirmDeleteNote = () => {
+    const id = confirmDelete.noteId;
+    const newNotes= notes.filter(note => note.id !== id);
+    setNotes(newNotes);
 
-      if(activeNoteId === id) {
-        if(newNotes.length > 0) {
-          setActiveNoteId(newNotes[0].id);
-          setCurrentTitle(newNotes[0].title);
-          setCurrentContent(newNotes[0].content);
-          setCurrentTags(newNotes[0].tags || []);
-        }else{
+    if(activeNoteId === id) {
+      if(newNotes.length > 0) {
+        const n = newNotes[0];
+        setActiveNoteId(n.id);
+        setCurrentTitle(n.title);
+        setCurrentContent(n.content);
+        setCurrentTags(n.tags || []);
+      }else{
           setActiveNoteId(null);
           setCurrentTitle('');
           setCurrentContent('');
           setCurrentTags([]);
         }
       }
-    }
+    
+    setConfirmDelete({ visible: false, noteId: null });
   };
+
+  const cancelDeleteNote = () => {
+    setConfirmDelete({ visible: false, noteId: null });
+  }
+
+  useEffect(() => {
+    if(!confirmDelete.visible) return;
+    const timer = setTimeout(cancelDeleteNote, 5000);
+    return () => clearTimeout(timer);
+  }, [confirmDelete.visible]);
 
   const addTag = () => {
     const tag = tagInput.trim().toLowerCase();
@@ -247,7 +267,7 @@ function App() {
        
       <div className='flex justify-between items-start'>
        <h3 className='font-medium text-gray-800 truncate flex-1'>{note.title || 'Untitled'}</h3>
-       <button onClick={(e) => deleteNote(note.id, e)} className='text-red-500 hover:text-red-700'><Trash2 size={16} /></button>
+       <button onClick={(e) => requestDeleteNote(note.id, e)} className='text-red-500 hover:text-red-700'><Trash2 size={16} /></button>
       </div>
       <p className='text-xs text-gray-500 line-clamp-1 mt-1'>{stripHtml(note.content) || 'Empty note...'}</p>
      </div>
@@ -309,6 +329,22 @@ function App() {
        </div>
        )}
      </div>
+   
+   {confirmDelete.visible && (
+    <div className="fixed top-6 right-6 z-50">
+     <div className="bg-white border shadow-xl rounded-lg p-4 w-72 animate-fade-in">
+      <div className="flex justify-between">
+       <p className="text-sm">Delete this note permanently?</p>
+       <button onClick={cancelDeleteNote}><X size={16} /></button>
+      </div>
+
+      <div className="flex justify-end gap-2 mt-4">
+       <button onClick={cancelDeleteNote} className="px-3 py-1 border rounded text-xs">Cancel</button>
+       <button onClick={confirmDeleteNote} className="px-3 py-1 bg-red-500 text-white rounded text-xs">Delete</button>
+      </div>
+     </div>
+    </div>
+   )}
   
    {isSidebarOpen && (
     <div className="fixed inset-0 bg-black/20 z-20 md:hidden" onClick={() => setIsSidebarOpen(false)} /> )}</div>
