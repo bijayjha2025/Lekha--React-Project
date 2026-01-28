@@ -1,8 +1,8 @@
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, FileText, Upload } from 'lucide-react';
 import NoteListItem from './NoteListItem';
 import Logo from '../assets/Lekha.png';
 
-const Sidebar = ({ isOpen, notes, activeNoteId, searchQuery, setSearchQuery, selectedTag, setSelectedTag, sortBy, setSortBy, allTags, onCreateNote, onSelectNote, onDeleteNote, onTogglePin }) => {
+const Sidebar = ({ isOpen, notes, activeNoteId, searchQuery, setSearchQuery, selectedTag, setSelectedTag, sortBy, setSortBy, allTags, onCreateNote, onSelectNote, onDeleteNote, onTogglePin, onOpenImportExport }) => {
   
  return (
   <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 transform ${ isOpen ? 'translate-x-0' : '-translate-x-full' } md:relative md:translate-x-0`} >
@@ -39,9 +39,12 @@ const Sidebar = ({ isOpen, notes, activeNoteId, searchQuery, setSearchQuery, sel
      </select>
     </div>
 
-    <button onClick={onCreateNote} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#71f022] text-black rounded-lg hover:bg-[#0dd417] transition-colors cursor-pointer">
-     <Plus size={18} /> New Note
-    </button>
+    <div className='grid grid-cols-2 gap-2 mb-2'>
+      <button onClick={onCreateNote} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#71f022] text-black rounded-lg hover:bg-[#0dd417] transition-colors cursor-pointer">
+     <Plus size={16} /> New Note</button>
+     <button onClick={onOpenImportExport} className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+      <Upload size={16} /> Import/Export</button>
+    </div>
    </div>
 
    <div className="flex-1 overflow-y-auto">

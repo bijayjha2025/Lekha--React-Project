@@ -140,6 +140,36 @@ export const useNotes = () => {
     );
   }
 
+  const importFromPdf = async (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try{
+          const text = e.target.result;
+          const newNote = {
+            id: Date.now(),
+            title: file.name.replace('.pdf', ''),
+            content: `<p>${text}</p>`,
+            tags: ['imported', 'pdf'],
+            isPinned: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          setNotes(prev => [newNote, ...prev]);
+          setActiveNoteId(newNote.id);
+          setCurrentTitle(newNote.title);
+          setCurrentContent(newNote.content);
+          setCurrentTags(newNote.tags);
+          resolve(newNote);
+        } catch (error) {
+          reject(error);
+        }
+        };
+      reader.onerror = reject;
+      reader.readAsText(file);
+    });
+  };
+
   return {
     notes,
     activeNoteId,
@@ -157,5 +187,6 @@ export const useNotes = () => {
     addTag,
     removeTag,
     togglePin,
+    importFromPdf,
   };
 };

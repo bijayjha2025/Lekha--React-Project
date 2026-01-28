@@ -6,16 +6,18 @@ import MobileHeader from './Components/MobileHeader';
 import NoteEditor from './Components/NoteEditor';
 import EmptyNoteState from './Components/EmptyNoteState';
 import DeleteConfirmationModal from './Components/DeleteConfirmationModal';
+import ImportExportMenu from './Components/ImportExportMenu';
 
 
 
 function App() {
-  const { notes, activeNoteId, activeNote, currentTitle, currentContent, currentTags, isSaving, allTags, setCurrentTitle, setCurrentContent, createNewNote, selectNote, deleteNote, addTag, removeTag, togglePin  } = useNotes();
+  const { notes, activeNoteId, activeNote, currentTitle, currentContent, currentTags, isSaving, allTags, setCurrentTitle, setCurrentContent, createNewNote, selectNote, deleteNote, addTag, removeTag, togglePin, importFromPdf  } = useNotes();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('updated');
   const [selectedTag, setSelectedTag] = useState('all');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [showImportExportMenu, setShowImportExportMenu] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState({
     visible: false,
     noteId: null,
@@ -24,6 +26,13 @@ function App() {
   const handleSelectNote = (note) => {
     const shouldCloseSidebar = selectNote(note);
     if (shouldCloseSidebar) {
+      setIsSidebarOpen(false);
+    }
+  };
+
+  const handleImportPdf = async (file) => {
+    await importFromPdf(file);
+    if (window.innerWidth <= 768) {
       setIsSidebarOpen(false);
     }
   };
@@ -56,7 +65,7 @@ function App() {
 
   return(
   <div className='flex h-screen bg-gray-100 overflow-hidden'>
-    <Sidebar isOpen={isSidebarOpen} notes={sortedNotes} activeNoteId={activeNoteId} searchQuery={searchQuery} setSearchQuery={setSearchQuery}selectedTag={selectedTag} setSelectedTag={setSelectedTag} sortBy={sortBy} setSortBy={setSortBy} allTags={allTags} onCreateNote={createNewNote} onSelectNote={handleSelectNote} onDeleteNote={requestDeleteNote} onTogglePin={togglePin} />
+    <Sidebar isOpen={isSidebarOpen} notes={sortedNotes} activeNoteId={activeNoteId} searchQuery={searchQuery} setSearchQuery={setSearchQuery}selectedTag={selectedTag} setSelectedTag={setSelectedTag} sortBy={sortBy} setSortBy={setSortBy} allTags={allTags} onCreateNote={createNewNote} onSelectNote={handleSelectNote} onDeleteNote={requestDeleteNote} onTogglePin={togglePin} onOpenImportExport={() => setShowImportExportMenu(true)} />
    
     <div className='flex-1 flex flex-col min-w-0 bg-white'>
     <MobileHeader onToggleSidebar={() => setIsSidebarOpen(true)} />
@@ -68,6 +77,8 @@ function App() {
     </div>
 
     <DeleteConfirmationModal visible={confirmDelete.visible} onConfirm={confirmDeleteNote} onCancel={cancelDeleteNote} />
+
+    <ImportExportMenu visible={showImportExportMenu} onClose={() => setShowImportExportMenu(false)} onImportPdf={handleImportPdf} currentContent={currentContent} />
 
     {isSidebarOpen && (
       <div className="fixed inset-0 bg-black/20 z-20 md:hidden" onClick={() => setIsSidebarOpen(false)} />
