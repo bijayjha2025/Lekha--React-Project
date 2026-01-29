@@ -56,7 +56,7 @@ const NoteEditor = ({ activeNote, currentTitle, currentContent, currentTags, isS
         <ChevronLeft size={16} />Back to list</button>
       </div>
 
-      <input type="text" value={currentTitle} onChange={(e) => onTitleChange(e.target.value)} placeholder="Note Title..." className="w-full py-2 text-xl text-gray-800 md:text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#bff542]"/>
+      <input type="text" value={currentTitle || ''} onChange={(e) => onTitleChange(e.target.value)} placeholder="Note Title..." className="w-full py-2 text-xl text-gray-800 md:text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#bff542]"/>
 
       <div className="flex flex-wrap items-center gap-3 mt-2 pb-2">
        <div className="flex items-center gap-2">
@@ -66,7 +66,7 @@ const NoteEditor = ({ activeNote, currentTitle, currentContent, currentTags, isS
        </div>
 
        <div className="flex gap-1">
-        {currentTags.map((tag) => (
+        {(currentTags || []).map((tag) => (
         <span key={tag} className={`text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 ${getTagColor( tag )}`}>
         {tag}
         <X size={10} className="cursor-pointer" onClick={() => onRemoveTag(tag)} />
@@ -77,7 +77,7 @@ const NoteEditor = ({ activeNote, currentTitle, currentContent, currentTags, isS
       </div>
 
       <div className="flex-1 overflow-hidden relative">
-       <ReactQuill theme="snow" value={currentContent} onChange={onContentChange} modules={modules} formats={formats} placeholder="Start typing your note..." className="h-full quill-responsive" />
+       <ReactQuill theme="snow" value={currentContent || ''} onChange={onContentChange} modules={modules} formats={formats} placeholder="Start typing your note..." className="h-full quill-responsive" />
       </div>
 
       <div className="p-2 border-t flex justify-between items-center text-[10px] text-gray-400 bg-gray-50">

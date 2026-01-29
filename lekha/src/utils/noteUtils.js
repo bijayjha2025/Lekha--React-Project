@@ -23,9 +23,9 @@ export const getTagColor = (tag) => {
 export const filterNotes = (notes, searchQuery, selectedTag) => {
   return notes.filter(note => {
     const searchLower = searchQuery.toLowerCase();
-    const plainContent = stripHtml(note.content);
+    const plainContent = stripHtml(note.content  || '');
     const matchesSearch = 
-      note.title.toLowerCase().includes(searchLower) || 
+      (note.title || '').toLowerCase().includes(searchLower) || 
       plainContent.toLowerCase().includes(searchLower);
     const matchesTag = 
       !selectedTag || 
@@ -48,7 +48,7 @@ export const sortNotes = (notes, sortBy) => {
       case 'created':
         return new Date(b.createdAt) - new Date(a.createdAt);
       case 'title':
-        return a.title.localeCompare(b.title);
+        return (a.title || '').localeCompare(b.title);
       default:
         return 0;
     }
