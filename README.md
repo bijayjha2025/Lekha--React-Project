@@ -12,6 +12,16 @@ state management and complex text formatting, providing a seamless way to create
 
 ---
 
+## Screenshots
+![Welcome Content](./lekha/src/assets/ScreenShots/Welcome.png)
+![Add New Note](./lekha/src/assets/ScreenShots/AddNewNote.png)
+![Import Export Display](./lekha/src/assets/ScreenShots/ImportExportDisplay.png)
+![Template Page](./lekha/src/assets/ScreenShots/TemplatePage.png)
+![Sort By](./lekha/src/assets/ScreenShots/SortBy.png)
+![Delete Toast Message](./lekha/src/assets/ScreenShots/DeleteToastMessage.png)
+
+---
+
 ## Key Features
 ### Core Functions
 - **Rich Text Editing**: Full support for bold, italics, lists, and headers using React- Quill for now.
